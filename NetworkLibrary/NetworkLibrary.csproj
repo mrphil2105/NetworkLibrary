@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <Authors>mrphil2105</Authors>
+    <Company>mrphil2105</Company>
+    <Description>A simple library for working with TCP and UDP.</Description>
+    <Copyright>Copyright (c) 2018 mrphil2105</Copyright>
+    <PackageLicenseUrl>https://github.com/mrphil2105/NetworkLibrary/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/mrphil2105/NetworkLibrary</PackageProjectUrl>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>
