@@ -11,6 +11,10 @@ using NetworkLibrary.Interfaces;
 
 namespace NetworkLibrary.Tcp
 {
+    /// <summary>
+    /// A class used to communicate with a <see cref="SslServer{TPackage}"/>.
+    /// </summary>
+    /// <typeparam name="TPackage">The custom package to communicate with.</typeparam>
     public class SslClient<TPackage> : ITcpClient<TPackage>, IDisposable
         where TPackage : IPackage, new()
     {
@@ -40,10 +44,19 @@ namespace NetworkLibrary.Tcp
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SslClient{TPackage}"/> class on any ip address and port, with the specified server name.
+        /// </summary>
+        /// <param name="serverName">The name of the server to connect to.</param>
         public SslClient(string serverName) : this(IPAddress.Any, 0, serverName)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SslClient{TPackage}"/> class on the specified endpoint, with the specified server name.
+        /// </summary>
+        /// <param name="localEndPoint">The local endpoint to bind to.</param>
+        /// <param name="serverName">The name of the server to connect to.</param>
         public SslClient(EndPoint localEndPoint, string serverName)
         {
             if (localEndPoint == null)
@@ -70,6 +83,12 @@ namespace NetworkLibrary.Tcp
             _lengthPrefixProtocol.DataReceived += OnDataReceived;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SslClient{TPackage}"/> class on the specified ip address and port, with the specified server name.
+        /// </summary>
+        /// <param name="localAddress">The local ip address to bind to.</param>
+        /// <param name="localPort">The local port to bind to.</param>
+        /// <param name="serverName">The name of the server to connect to.</param>
         public SslClient(IPAddress localAddress, int localPort, string serverName) :
             this(new IPEndPoint(localAddress, localPort), serverName)
         {
@@ -105,6 +124,9 @@ namespace NetworkLibrary.Tcp
 
         #region Accessors
 
+        /// <summary>
+        /// Indicates whether the <see cref="SslClient{TPackage}"/> is receiving packages.
+        /// </summary>
         public bool IsRunning
         {
             get
@@ -113,6 +135,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the buffer size when receiving packages.
+        /// </summary>
         public int BufferSize
         {
             get
@@ -130,6 +155,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the maximum amount of bytes allowed when receiving packages.
+        /// </summary>
         public int MaxPackageSize
         {
             get
@@ -142,6 +170,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The local endpoint that the <see cref="SslClient{TPackage}"/> is bound to.
+        /// </summary>
         public EndPoint LocalEndPoint
         {
             get
@@ -150,6 +181,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The remote endpoint if the <see cref="SslClient{TPackage}"/> is connected to a <see cref="SslServer{TPackage}"/>.
+        /// </summary>
         public EndPoint RemoteEndPoint
         {
             get
@@ -158,6 +192,20 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The internal socket used by the <see cref="SslClient{TPackage}"/>.
+        /// </summary>
+        public Socket Socket
+        {
+            get
+            {
+                return _socket;
+            }
+        }
+
+        /// <summary>
+        /// An event that gets invoked when the <see cref="SslClient{TPackage}"/> has received a package.
+        /// </summary>
         public event EventHandler<TPackage> PackageReceived
         {
             add
@@ -176,6 +224,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// An event that gets invoked when the <see cref="SslClient{TPackage}"/> has stopped receiving packages.
+        /// </summary>
         public event EventHandler<Exception> Stopped
         {
             add
@@ -200,6 +251,10 @@ namespace NetworkLibrary.Tcp
 
         #region Public
 
+        /// <summary>
+        /// Connects to a <see cref="SslServer{TPackage}"/> with the specified endpoint.
+        /// </summary>
+        /// <param name="remoteEndPoint">The remote endpoint to connect to.</param>
         public virtual void Connect(EndPoint remoteEndPoint)
         {
             if (remoteEndPoint == null)
@@ -217,11 +272,21 @@ namespace NetworkLibrary.Tcp
             InitializeSslAsClient();
         }
 
+        /// <summary>
+        /// Connects to a <see cref="SslServer{TPackage}"/> with the specified ip address and port.
+        /// </summary>
+        /// <param name="remoteAddress">The remote ip address to connect to.</param>
+        /// <param name="remotePort">The remote port to connect to.</param>
         public virtual void Connect(IPAddress remoteAddress, int remotePort)
         {
             Connect(new IPEndPoint(remoteAddress, remotePort));
         }
 
+        /// <summary>
+        /// Asynchronously connects to a <see cref="SslServer{TPackage}"/> with the specified endpoint.
+        /// </summary>
+        /// <param name="remoteEndPoint">The remote endpoint to connect to.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task ConnectAsync(EndPoint remoteEndPoint)
         {
             if (remoteEndPoint == null)
@@ -240,11 +305,22 @@ namespace NetworkLibrary.Tcp
             await InitializeSslAsClientAsync();
         }
 
+        /// <summary>
+        /// Asynchronously connects to a <see cref="SslServer{TPackage}"/> with the specified ip address and port.
+        /// </summary>
+        /// <param name="remoteAddress">The remote ip address to connect to.</param>
+        /// <param name="remotePort">The remote port to connect to.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task ConnectAsync(IPAddress remoteAddress, int remotePort)
         {
             await ConnectAsync(new IPEndPoint(remoteAddress, remotePort));
         }
 
+        /// <summary>
+        /// Starts receiving packages in a new thread.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token used to cancel the operation.</param>
+        /// <param name="isBackground">Set this to true to mark the thread as a background thread.</param>
         public void Start(CancellationToken cancellationToken, bool isBackground = false)
         {
             if (_isDisposed)
@@ -265,6 +341,10 @@ namespace NetworkLibrary.Tcp
             _receiveThread.Start();
         }
 
+        /// <summary>
+        /// Sends a package to the <see cref="SslServer{TPackage}"/>.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
         public virtual void SendPackage(TPackage package)
         {
             if (package == null)
@@ -281,6 +361,11 @@ namespace NetworkLibrary.Tcp
             _sslStream.Write(packageBytes, 0, packageBytes.Length);
         }
 
+        /// <summary>
+        /// Asynchronously sends a package to the <see cref="SslServer{TPackage}"/>.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task SendPackageAsync(TPackage package)
         {
             if (package == null)
@@ -297,6 +382,9 @@ namespace NetworkLibrary.Tcp
             await _sslStream.WriteAsync(packageBytes, 0, packageBytes.Length);
         }
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="SslClient{TPackage}"/>.
+        /// </summary>
         public void Close()
         {
             Dispose();
@@ -399,12 +487,19 @@ namespace NetworkLibrary.Tcp
 
         private bool _isDisposed;
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="SslClient{TPackage}"/>.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Releases all or only unmanaged resources used by the <see cref="SslClient{TPackage}"/>.
+        /// </summary>
+        /// <param name="isDisposing">Set this to true to also release managed resources.</param>
         protected virtual void Dispose(bool isDisposing)
         {
             if (_isDisposed)

@@ -3,7 +3,7 @@ using System.Net;
 
 namespace NetworkLibrary.Tcp
 {
-    public class LengthPrefixProtocol
+    internal class LengthPrefixProtocol
     {
         #region Fields
 

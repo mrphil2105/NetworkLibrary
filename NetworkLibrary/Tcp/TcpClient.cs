@@ -8,6 +8,10 @@ using NetworkLibrary.Interfaces;
 
 namespace NetworkLibrary.Tcp
 {
+    /// <summary>
+    /// A class used to communicate with a <see cref="TcpServer{TPackage}"/>.
+    /// </summary>
+    /// <typeparam name="TPackage">The custom package to communicate with.</typeparam>
     public class TcpClient<TPackage> : ITcpClient<TPackage>, IDisposable
         where TPackage : IPackage, new()
     {
@@ -32,10 +36,17 @@ namespace NetworkLibrary.Tcp
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpClient{TPackage}"/> class on any ip address and port.
+        /// </summary>
         public TcpClient() : this(IPAddress.Any, 0)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpClient{TPackage}"/> class on the specified endpoint.
+        /// </summary>
+        /// <param name="localEndPoint">The local endpoint to bind to.</param>
         public TcpClient(EndPoint localEndPoint)
         {
             if (localEndPoint == null)
@@ -55,6 +66,11 @@ namespace NetworkLibrary.Tcp
             _lengthPrefixProtocol.DataReceived += OnDataReceived;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpClient{TPackage}"/> class on the specified ip address and port.
+        /// </summary>
+        /// <param name="localAddress">The local ip address to bind to.</param>
+        /// <param name="localPort">The local port to bind to.</param>
         public TcpClient(IPAddress localAddress, int localPort) : this(new IPEndPoint(localAddress, localPort))
         {
         }
@@ -82,6 +98,9 @@ namespace NetworkLibrary.Tcp
 
         #region Accessors
 
+        /// <summary>
+        /// Indicates whether the <see cref="TcpClient{TPackage}"/> is receiving packages.
+        /// </summary>
         public bool IsRunning
         {
             get
@@ -90,6 +109,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the buffer size when receiving packages.
+        /// </summary>
         public int BufferSize
         {
             get
@@ -107,6 +129,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the maximum amount of bytes allowed when receiving packages.
+        /// </summary>
         public int MaxPackageSize
         {
             get
@@ -119,6 +144,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The local endpoint that the <see cref="TcpClient{TPackage}"/> is bound to.
+        /// </summary>
         public EndPoint LocalEndPoint
         {
             get
@@ -127,6 +155,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The remote endpoint if the <see cref="TcpClient{TPackage}"/> is connected to a <see cref="TcpServer{TPackage}"/>.
+        /// </summary>
         public EndPoint RemoteEndPoint
         {
             get
@@ -135,6 +166,20 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The internal socket used by the <see cref="TcpClient{TPackage}"/>.
+        /// </summary>
+        public Socket Socket
+        {
+            get
+            {
+                return _socket;
+            }
+        }
+
+        /// <summary>
+        /// An event that gets invoked when the <see cref="TcpClient{TPackage}"/> has received a package.
+        /// </summary>
         public event EventHandler<TPackage> PackageReceived
         {
             add
@@ -153,6 +198,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// An event that gets invoked when the <see cref="TcpClient{TPackage}"/> has stopped receiving packages.
+        /// </summary>
         public event EventHandler<Exception> Stopped
         {
             add
@@ -177,6 +225,10 @@ namespace NetworkLibrary.Tcp
 
         #region Public
 
+        /// <summary>
+        /// Connects to a <see cref="TcpServer{TPackage}"/> with the specified endpoint.
+        /// </summary>
+        /// <param name="remoteEndPoint">The remote endpoint to connect to.</param>
         public virtual void Connect(EndPoint remoteEndPoint)
         {
             if (remoteEndPoint == null)
@@ -193,11 +245,21 @@ namespace NetworkLibrary.Tcp
             _networkStream = new NetworkStream(_socket);
         }
 
+        /// <summary>
+        /// Connects to a <see cref="TcpServer{TPackage}"/> with the specified ip address and port.
+        /// </summary>
+        /// <param name="remoteAddress">The remote ip address to connect to.</param>
+        /// <param name="remotePort">The remote port to connect to.</param>
         public virtual void Connect(IPAddress remoteAddress, int remotePort)
         {
             Connect(new IPEndPoint(remoteAddress, remotePort));
         }
 
+        /// <summary>
+        /// Asynchronously connects to a <see cref="TcpServer{TPackage}"/> with the specified endpoint.
+        /// </summary>
+        /// <param name="remoteEndPoint">The remote endpoint to connect to.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task ConnectAsync(EndPoint remoteEndPoint)
         {
             if (remoteEndPoint == null)
@@ -215,11 +277,22 @@ namespace NetworkLibrary.Tcp
             _networkStream = new NetworkStream(_socket);
         }
 
+        /// <summary>
+        /// Asynchronously connects to a <see cref="TcpServer{TPackage}"/> with the specified ip address and port.
+        /// </summary>
+        /// <param name="remoteAddress">The remote ip address to connect to.</param>
+        /// <param name="remotePort">The remote port to connect to.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task ConnectAsync(IPAddress remoteAddress, int remotePort)
         {
             await ConnectAsync(new IPEndPoint(remoteAddress, remotePort));
         }
 
+        /// <summary>
+        /// Starts receiving packages in a new thread.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token used to cancel the operation.</param>
+        /// <param name="isBackground">Set this to true to mark the thread as a background thread.</param>
         public void Start(CancellationToken cancellationToken, bool isBackground = false)
         {
             if (_isDisposed)
@@ -240,6 +313,10 @@ namespace NetworkLibrary.Tcp
             _receiveThread.Start();
         }
 
+        /// <summary>
+        /// Sends a package to the <see cref="TcpServer{TPackage}"/>.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
         public virtual void SendPackage(TPackage package)
         {
             if (package == null)
@@ -256,6 +333,11 @@ namespace NetworkLibrary.Tcp
             _networkStream.Write(packageBytes, 0, packageBytes.Length);
         }
 
+        /// <summary>
+        /// Asynchronously sends a package to the <see cref="TcpServer{TPackage}"/>.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task SendPackageAsync(TPackage package)
         {
             if (package == null)
@@ -272,6 +354,9 @@ namespace NetworkLibrary.Tcp
             await _networkStream.WriteAsync(packageBytes, 0, packageBytes.Length);
         }
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="TcpClient{TPackage}"/>.
+        /// </summary>
         public void Close()
         {
             Dispose();
@@ -321,12 +406,19 @@ namespace NetworkLibrary.Tcp
 
         private bool _isDisposed;
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="TcpClient{TPackage}"/>.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Releases all or only unmanaged resources used by the <see cref="TcpClient{TPackage}"/>.
+        /// </summary>
+        /// <param name="isDisposing">Set this to true to also release managed resources.</param>
         protected virtual void Dispose(bool isDisposing)
         {
             if (_isDisposed)

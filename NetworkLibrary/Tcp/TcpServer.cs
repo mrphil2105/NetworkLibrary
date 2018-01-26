@@ -7,6 +7,10 @@ using NetworkLibrary.Interfaces;
 
 namespace NetworkLibrary.Tcp
 {
+    /// <summary>
+    /// A class used to accept and communicate with multiple <see cref="TcpClient{TPackage}"/>.
+    /// </summary>
+    /// <typeparam name="TPackage">The custom package to communicate with.</typeparam>
     public class TcpServer<TPackage> : IThreaded, IDisposable
         where TPackage : IPackage, new()
     {
@@ -31,6 +35,10 @@ namespace NetworkLibrary.Tcp
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpServer{TPackage}"/> class on the specified endpoint.
+        /// </summary>
+        /// <param name="listeningEndPoint">The local endpoint to listen on.</param>
         public TcpServer(EndPoint listeningEndPoint)
         {
             if (listeningEndPoint == null)
@@ -49,6 +57,11 @@ namespace NetworkLibrary.Tcp
             _socket.Bind(listeningEndPoint);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TcpServer{TPackage}"/> class on the specified ip address and port.
+        /// </summary>
+        /// <param name="listeningAddress">The local ip address to listen on.</param>
+        /// <param name="listeningPort">The local port to listen on.</param>
         public TcpServer(IPAddress listeningAddress, int listeningPort) : this(new IPEndPoint(listeningAddress, listeningPort))
         {
         }
@@ -57,6 +70,9 @@ namespace NetworkLibrary.Tcp
 
         #region Accessors
 
+        /// <summary>
+        /// Indicates whether the <see cref="TcpServer{TPackage}"/> is accepting clients.
+        /// </summary>
         public bool IsRunning
         {
             get
@@ -65,6 +81,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the backlog when listening.
+        /// </summary>
         public int Backlog
         {
             get
@@ -82,6 +101,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the buffer size on new clients.
+        /// </summary>
         public int BufferSize
         {
             get
@@ -99,6 +121,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the maximum amount of bytes allowed on new clients.
+        /// </summary>
         public int MaxPackageSize
         {
             get
@@ -116,6 +141,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The local endpoint that the <see cref="TcpServer{TPackage}"/> is listening on.
+        /// </summary>
         public EndPoint LocalEndPoint
         {
             get
@@ -124,6 +152,20 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// The internal socket used by the <see cref="TcpServer{TPackage}"/>.
+        /// </summary>
+        public Socket Socket
+        {
+            get
+            {
+                return _socket;
+            }
+        }
+
+        /// <summary>
+        /// An event that gets invoked when a <see cref="TcpClient{TPackage}"/> has connected.
+        /// </summary>
         public event EventHandler<TcpClient<TPackage>> ClientConnected
         {
             add
@@ -142,6 +184,9 @@ namespace NetworkLibrary.Tcp
             }
         }
 
+        /// <summary>
+        /// An event that gets invoked when the <see cref="TcpServer{TPackage}"/> has stopped accepting clients.
+        /// </summary>
         public event EventHandler<Exception> Stopped
         {
             add
@@ -166,11 +211,19 @@ namespace NetworkLibrary.Tcp
 
         #region Public
 
+        /// <summary>
+        /// Listens on the specified local endpoint.
+        /// </summary>
         public void Listen()
         {
             _socket.Listen(_backlog);
         }
 
+        /// <summary>
+        /// Starts accepting clients in a new thread.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token used to cancel the operation.</param>
+        /// <param name="isBackground">Set this to true to mark the thread as a background thread.</param>
         public void Start(CancellationToken cancellationToken, bool isBackground = false)
         {
             if (_isDisposed)
@@ -180,7 +233,7 @@ namespace NetworkLibrary.Tcp
 
             if (_isRunning)
             {
-                throw new InvalidOperationException("You cannot start a server that is already running.");
+                throw new InvalidOperationException("You cannot start a server that is already accepting clients.");
             }
 
             _isRunning = true;
@@ -191,6 +244,10 @@ namespace NetworkLibrary.Tcp
             _serverThread.Start();
         }
 
+        /// <summary>
+        /// Manually accepts the next incoming <see cref="TcpClient{TPackage}"/>. This method should not be called if <see cref="IsRunning"/> is true.
+        /// </summary>
+        /// <returns>The newly connected <see cref="TcpClient{TPackage}"/>.</returns>
         public virtual TcpClient<TPackage> AcceptClient()
         {
             if (_isDisposed)
@@ -206,6 +263,10 @@ namespace NetworkLibrary.Tcp
             };
         }
 
+        /// <summary>
+        /// Asynchronously and manually accepts the next incoming <see cref="TcpClient{TPackage}"/>. This method should not be called if <see cref="IsRunning"/> is true.
+        /// </summary>
+        /// <returns>A task with the newly connected <see cref="TcpClient{TPackage}"/>, that represents the asynchronous operation.</returns>
         public virtual async Task<TcpClient<TPackage>> AcceptClientAsync()
         {
             if (_isDisposed)
@@ -222,6 +283,9 @@ namespace NetworkLibrary.Tcp
             };
         }
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="TcpServer{TPackage}"/>.
+        /// </summary>
         public void Close()
         {
             Dispose();
@@ -259,12 +323,19 @@ namespace NetworkLibrary.Tcp
 
         private bool _isDisposed;
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="TcpServer{TPackage}"/>.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Releases all or only unmanaged resources used by the <see cref="TcpServer{TPackage}"/>.
+        /// </summary>
+        /// <param name="isDisposing">Set this to true to also release managed resources.</param>
         protected virtual void Dispose(bool isDisposing)
         {
             if (_isDisposed)

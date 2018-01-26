@@ -7,6 +7,10 @@ using NetworkLibrary.Interfaces;
 
 namespace NetworkLibrary.Udp
 {
+    /// <summary>
+    /// A class used to communicate with multiple <see cref="UdpClient{TPackage}"/>.
+    /// </summary>
+    /// <typeparam name="TPackage">The custom package to communicate with.</typeparam>
     public class UdpClient<TPackage> : IThreaded, IDisposable
         where TPackage : IPackage, new()
     {
@@ -19,7 +23,7 @@ namespace NetworkLibrary.Udp
         private Thread _receiveThread;
         private volatile bool _isRunning;
 
-        private event EventHandler<TPackage> _packageReceived;
+        private event EventHandler<PackageReceivedEventArgs> _packageReceived;
         private readonly object _packageReceivedLock;
 
         private event EventHandler<Exception> _stopped;
@@ -29,10 +33,17 @@ namespace NetworkLibrary.Udp
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UdpClient{TPackage}"/> class on any ip address and port.
+        /// </summary>
         public UdpClient() : this(IPAddress.Any, 0)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UdpClient{TPackage}"/> class on the specified endpoint.
+        /// </summary>
+        /// <param name="localEndPoint">The local endpoint to bind to.</param>
         public UdpClient(EndPoint localEndPoint)
         {
             if (localEndPoint == null)
@@ -49,6 +60,11 @@ namespace NetworkLibrary.Udp
             _socket.Bind(localEndPoint);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UdpClient{TPackage}"/> class on the specified ip address and port.
+        /// </summary>
+        /// <param name="localAddress">The local ip address to bind to.</param>
+        /// <param name="localPort">The local port to bind to.</param>
         public UdpClient(IPAddress localAddress, int localPort) : this(new IPEndPoint(localAddress, localPort))
         {
         }
@@ -57,6 +73,9 @@ namespace NetworkLibrary.Udp
 
         #region Accessors
 
+        /// <summary>
+        /// Indicates whether the <see cref="UdpClient{TPackage}"/> is receiving packages.
+        /// </summary>
         public bool IsRunning
         {
             get
@@ -65,6 +84,9 @@ namespace NetworkLibrary.Udp
             }
         }
 
+        /// <summary>
+        /// Gets or sets the buffer size when receiving packages.
+        /// </summary>
         public int BufferSize
         {
             get
@@ -82,6 +104,9 @@ namespace NetworkLibrary.Udp
             }
         }
 
+        /// <summary>
+        /// The local endpoint that the <see cref="UdpClient{TPackage}"/> is bound to.
+        /// </summary>
         public EndPoint LocalEndPoint
         {
             get
@@ -90,7 +115,21 @@ namespace NetworkLibrary.Udp
             }
         }
 
-        public event EventHandler<TPackage> PackageReceived
+        /// <summary>
+        /// The internal socket used by the <see cref="UdpClient{TPackage}"/>.
+        /// </summary>
+        public Socket Socket
+        {
+            get
+            {
+                return _socket;
+            }
+        }
+
+        /// <summary>
+        /// An event that gets invoked when the <see cref="UdpClient{TPackage}"/> has received a package.
+        /// </summary>
+        public event EventHandler<PackageReceivedEventArgs> PackageReceived
         {
             add
             {
@@ -108,6 +147,9 @@ namespace NetworkLibrary.Udp
             }
         }
 
+        /// <summary>
+        /// An event that gets invoked when the <see cref="UdpClient{TPackage}"/> has stopped receiving packages.
+        /// </summary>
         public event EventHandler<Exception> Stopped
         {
             add
@@ -132,6 +174,11 @@ namespace NetworkLibrary.Udp
 
         #region Public
 
+        /// <summary>
+        /// Starts receiving packages in a new thread.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token used to cancel the operation.</param>
+        /// <param name="isBackground">Set this to true to mark the thread as a background thread.</param>
         public void Start(CancellationToken cancellationToken, bool isBackground = false)
         {
             if (_isDisposed)
@@ -152,6 +199,11 @@ namespace NetworkLibrary.Udp
             _receiveThread.Start();
         }
 
+        /// <summary>
+        /// Sends a package to a <see cref="UdpClient{TPackage}"/> on the specified endpoint.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
+        /// <param name="remoteEndPoint">The remote endpoint to send to.</param>
         public virtual void SendPackage(TPackage package, EndPoint remoteEndPoint)
         {
             if (package == null)
@@ -173,11 +225,23 @@ namespace NetworkLibrary.Udp
             _socket.SendTo(packageBytes, 0, packageBytes.Length, SocketFlags.None, remoteEndPoint);
         }
 
+        /// <summary>
+        /// Sends a package to a <see cref="UdpClient{TPackage}"/> on the specified ip address and port.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
+        /// <param name="remoteAddress">The remote ip address to send to.</param>
+        /// <param name="remotePort">The remote port to send to.</param>
         public virtual void SendPackage(TPackage package, IPAddress remoteAddress, int remotePort)
         {
             SendPackage(package, new IPEndPoint(remoteAddress, remotePort));
         }
 
+        /// <summary>
+        /// Asynchronously sends a package to a <see cref="UdpClient{TPackage}"/> on the specified endpoint.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
+        /// <param name="remoteEndPoint">The remote endpoint to send to.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task SendPackageAsync(TPackage package, EndPoint remoteEndPoint)
         {
             if (package == null)
@@ -200,11 +264,21 @@ namespace NetworkLibrary.Udp
                 SocketFlags.None, remoteEndPoint, ac, s), (ar) => _socket.EndSend(ar), null);
         }
 
+        /// <summary>
+        /// Asynchronously sends a package to a <see cref="UdpClient{TPackage}"/> on the specified ip address and port.
+        /// </summary>
+        /// <param name="package">The package to send.</param>
+        /// <param name="remoteAddress">The remote ip address to send to.</param>
+        /// <param name="remotePort">The remote port to send to.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public virtual async Task SendPackageAsync(TPackage package, IPAddress remoteAddress, int remotePort)
         {
             await SendPackageAsync(package, new IPEndPoint(remoteAddress, remotePort));
         }
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="UdpClient{TPackage}"/>.
+        /// </summary>
         public void Close()
         {
             Dispose();
@@ -222,14 +296,15 @@ namespace NetworkLibrary.Udp
             {
                 try
                 {
+                    var remoteEndPoint = (EndPoint)new IPEndPoint(IPAddress.Any, 0);
                     var buffer = new byte[_bufferSize];
-                    int bytesRead = _socket.Receive(buffer, 0, buffer.Length, SocketFlags.None);
+                    int bytesRead = _socket.ReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref remoteEndPoint);
 
                     if (bytesRead != 0)
                     {
                         var package = new TPackage();
                         package.Populate(buffer, bytesRead);
-                        _packageReceived?.Invoke(this, package);
+                        _packageReceived?.Invoke(this, new PackageReceivedEventArgs(package, remoteEndPoint));
                     }
                 }
                 catch (SocketException socketException)
@@ -249,12 +324,19 @@ namespace NetworkLibrary.Udp
 
         private bool _isDisposed;
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="UdpClient{TPackage}"/>.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Releases all or only unmanaged resources used by the <see cref="UdpClient{TPackage}"/>.
+        /// </summary>
+        /// <param name="isDisposing">Set this to true to also release managed resources.</param>
         protected virtual void Dispose(bool isDisposing)
         {
             if (_isDisposed)
@@ -271,6 +353,74 @@ namespace NetworkLibrary.Udp
         }
 
         #endregion
+
+        #endregion
+
+        #region Nested Types
+
+        /// <summary>
+        /// An event argument class used when a package has been received.
+        /// </summary>
+        public class PackageReceivedEventArgs : EventArgs
+        {
+            #region Fields
+
+            private TPackage _package;
+            private EndPoint _remoteEndPoint;
+
+            #endregion
+
+            #region Constructors
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="PackageReceivedEventArgs"/> class.
+            /// </summary>
+            /// <param name="package">The package that has been received.</param>
+            /// <param name="remoteEndPoint">The remote endpoint the package came from.</param>
+            public PackageReceivedEventArgs(TPackage package, EndPoint remoteEndPoint)
+            {
+                if (package == null)
+                {
+                    throw new ArgumentNullException(nameof(package));
+                }
+
+                if (remoteEndPoint == null)
+                {
+                    throw new ArgumentNullException(nameof(remoteEndPoint));
+                }
+
+                _package = package;
+                _remoteEndPoint = remoteEndPoint;
+            }
+
+            #endregion
+
+            #region Accessors
+
+            /// <summary>
+            /// The package that has been received.
+            /// </summary>
+            public TPackage Package
+            {
+                get
+                {
+                    return _package;
+                }
+            }
+
+            /// <summary>
+            /// The remote endpoint the package came from.
+            /// </summary>
+            public EndPoint RemoteEndPoint
+            {
+                get
+                {
+                    return _remoteEndPoint;
+                }
+            }
+
+            #endregion
+        }
 
         #endregion
     }
